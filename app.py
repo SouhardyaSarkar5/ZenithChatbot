@@ -33,7 +33,7 @@ def takeCommand():
         return "Sorry, an error occurred."
 
 def get_news():
-    api_key = "be18c630f62142b59dbb14b36bbd5227"
+    api_key = "c3637363cc1740ca9f5c0f954f291a53"
     url = f"https://newsapi.org/v2/top-headlines?country=in&apiKey={api_key}"
     response = requests.get(url)
     if response.status_code != 200:
@@ -49,7 +49,7 @@ def get_news():
     return news_summary
 
 def search_news(keyword):
-    api_key = "be18c630f62142b59dbb14b36bbd5227"
+    api_key = "c3637363cc1740ca9f5c0f954f291a53"
     url = f"https://newsapi.org/v2/everything?q={keyword}&sortBy=popularity&apiKey={api_key}"
     response = requests.get(url)
     if response.status_code != 200:
@@ -159,7 +159,7 @@ if __name__ == "__main__":
                 say(f"Opening {website}...")
                 webbrowser.open(url)
 
-            elif "generate" or "tell me" or "what is" in query or "write" in query:
+            elif "generate" or "tell me" or "what is" or "about" in query or "write" in query:
                 prompt = query
                 say("Generating content, please wait.")
                 generated_response = generate_content(prompt)
