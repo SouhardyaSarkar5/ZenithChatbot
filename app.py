@@ -4,6 +4,7 @@ import webbrowser
 import datetime
 import requests
 import random
+import re
 from demo import generate_content
 
 def say(text):
@@ -114,6 +115,12 @@ def respond_human_like(query):
             return True
     return False
 
+def clean_text(text):
+    # Remove any unwanted characters like asterisks or markdown symbols
+    text = re.sub(r'\*+', '', text)  # Remove asterisks
+    text = re.sub(r'[`~_<>]', '', text)  # Remove other special characters
+    return text
+
 if __name__ == "__main__":
     print("Zenith is ready.")
     greet_user()
@@ -166,7 +173,8 @@ if __name__ == "__main__":
             else:
                 say("Let me think about that...")
                 response = generate_content(query)
-                say(response)
+                cleaned_response = clean_text(response)  # Clean the response
+                say(cleaned_response)
 
         else:
             say("I didn't quite catch that. Could you try again?")
