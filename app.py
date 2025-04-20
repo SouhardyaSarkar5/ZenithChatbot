@@ -4,9 +4,10 @@ import webbrowser
 import datetime
 import requests
 import random
+import re
 from demo import generate_content
 
-# 🧠 Global memory to store last generated content
+
 last_generated_response = None
 
 def say(text):
@@ -16,6 +17,11 @@ def say(text):
     print(text)
     engine.say(text)
     engine.runAndWait()
+def clean_text(text):
+    # Remove any unwanted characters like asterisks or markdown symbols
+    text = re.sub(r'\*+', '', text)  # Remove asterisks
+    text = re.sub(r'[`~_<>]', '', text)  # Remove other special characters
+    return text
 
 def takeCommand():
     r = sr.Recognizer()
@@ -122,56 +128,64 @@ def respond_human_like(query):
     return False
 
 if __name__ == "__main__":
-    print('Voice Assistant Started')
+    print("Zenith is ready.")
     greet_user()
 
     while True:
         query = takeCommand()
 
         if query != "Sorry, I could not understand that.":
-            if not respond_human_like(query):
-                say(f"You said: {query}")
+            if respond_human_like(query):
+                continue
 
             if "the time" in query:
-                now = datetime.datetime.now()
-                current_time = now.strftime("%H:%M")
-                say(f"The time is {current_time}")
+                time = datetime.datetime.now().strftime("%H:%M")
+                say(f"The time is {time}")
 
             elif "news" in query:
                 if "about" in query:
                     keyword = query.split("about")[-1].strip()
-                    say(f"Fetching news about {keyword}, please wait.")
+                    say(f"Getting news about {keyword}")
                     news = search_news(keyword)
                 else:
-                    say("Fetching the latest news, please wait.")
+                    say("Fetching top news")
                     news = get_news()
                 say(news)
 
             elif "current affairs" in query:
-                say("Fetching the latest current affairs, please wait.")
+                say("Fetching current affairs")
                 news = get_news()
                 say(news)
 
             elif "weather" in query:
-                city = query.split("weather in")[-1].strip()
-                say(f"Fetching weather for {city}, please wait.")
+                if "in" in query:
+                    city = query.split("in")[-1].strip()
+                else:
+                    city = "your city"
+                say(f"Getting weather for {city}")
                 weather = get_weather(city)
                 say(weather)
 
             elif "open" in query:
-                website = query.split("open")[-1].strip()
-                url = f"http://{website}" if not website.startswith("http") else website
-                say(f"Opening {website}...")
+                site = query.split("open")[-1].strip()
+                url = f"https://{site}" if not site.startswith("http") else site
+                say(f"Opening {site}")
                 webbrowser.open(url)
 
-            elif any(kw in query for kw in ["generate", "tell me", "what is", "about", "write"]):
+            else:
+                # Handle any random or creative input using Gemini
+                 say("Let me think about that...")
+                 response = generate_content(query)
+                 say(response)
+                 
+        elif any(kw in query for kw in ["generate", "tell me", "what is", "about", "write"]):
                 prompt = query
                 say("Generating content, please wait.")
                 generated_response = generate_content(prompt)
                 last_generated_response = generated_response
                 say(generated_response)
 
-            elif any(kw in query for kw in ["be more", "make it", "change it", "edit it", "modify it", "make this", "improve this", "make it more", "the previous", "previous content"]) and last_generated_response:
+        elif any(kw in query for kw in ["be more", "make it", "change it", "edit it", "modify it", "make this", "improve this", "make it more", "the previous", "previous content"]) and last_generated_response:
                 followup_instruction = query
                 full_prompt = f"{followup_instruction}\n\nHere is the original content:\n{last_generated_response}"
                 say("Modifying the previous response, please wait.")
@@ -179,13 +193,15 @@ if __name__ == "__main__":
                 last_generated_response = generated_response
                 say(generated_response)
 
-            elif "stop" in query or "exit" in query:
-                say("Goodbye! Have a great day.")
-                last_generated_response = None
+        elif "exit" in query or "stop" in query:
+                say("Goodbye!")
                 break
 
-            else:
-                say("I'm not sure I understand that command. Could you please repeat?")
-
         else:
-            say("I didn't quite catch that. Could you please repeat?")
+                say("Let me think about that...")
+                response = generate_content(query)
+                cleaned_response = clean_text(response)  # Clean the response
+                say(cleaned_response)
+
+    else:
+       say("I didn't quite catch that. Could you try again?")
