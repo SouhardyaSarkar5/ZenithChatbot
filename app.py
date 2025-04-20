@@ -19,7 +19,7 @@ def takeCommand():
     with sr.Microphone() as source:
         r.pause_threshold = 1
         print("Listening...")
-        audio = r.listen(source, timeout=5)
+        audio = r.listen(source, timeout=7)
     try:
         print("Recognizing...")
         query = r.recognize_google(audio, language="en-in")
@@ -159,7 +159,7 @@ if __name__ == "__main__":
                 say(f"Opening {website}...")
                 webbrowser.open(url)
 
-            elif "generate" in query or "write" in query:
+            elif "generate" or "tell me" or "what is" in query or "write" in query:
                 prompt = query
                 say("Generating content, please wait.")
                 generated_response = generate_content(prompt)
