@@ -4,8 +4,10 @@ import webbrowser
 import datetime
 import requests
 import random
-import re
 from demo import generate_content
+
+# 🧠 Global memory to store last generated content
+last_generated_response = None
 
 def say(text):
     engine = pyttsx3.init()
@@ -29,7 +31,7 @@ def takeCommand():
     except sr.UnknownValueError:
         say("I didn't quite catch that. Could you please repeat?")
         return "Sorry, I could not understand that."
-    except sr.RequestError:
+    except sr.RequestError as e:
         say("There seems to be an issue with my speech recognition service.")
         return "Sorry, an error occurred."
 
@@ -37,144 +39,153 @@ def get_news():
     api_key = "c3637363cc1740ca9f5c0f954f291a53"
     url = f"https://newsapi.org/v2/top-headlines?country=in&apiKey={api_key}"
     response = requests.get(url)
+
     if response.status_code != 200:
-        return "I'm having trouble fetching the news right now."
+        say("I'm having trouble fetching the news right now. Please try again later.")
+        return "Sorry, I couldn't fetch the news."
 
-    data = response.json()
-    articles = data.get("articles", [])
-    if not articles:
-        return "No news articles found."
-
+    news_data = response.json()
+    if "articles" not in news_data or not news_data["articles"]:
+        say("I couldn't find any news articles at the moment.")
+        return "Sorry, I couldn't find any news articles."
+    articles = news_data["articles"]
     headlines = [article["title"] for article in articles[:5]]
-    return "Here are the top 5 headlines: " + ". ".join(headlines)
+    news_summary = "Here are the top 5 news headlines: " + ". ".join(headlines)
+    return news_summary
 
 def search_news(keyword):
     api_key = "c3637363cc1740ca9f5c0f954f291a53"
     url = f"https://newsapi.org/v2/everything?q={keyword}&sortBy=popularity&apiKey={api_key}"
     response = requests.get(url)
     if response.status_code != 200:
-        return f"Couldn't fetch news about {keyword} right now."
-
-    data = response.json()
-    articles = data.get("articles", [])
-    if not articles:
-        return f"No news articles found for {keyword}."
-
+        say(f"I'm having trouble fetching news about {keyword} right now.")
+        return f"Sorry, I couldn't fetch the news for {keyword}."
+    news_data = response.json()
+    if "articles" not in news_data or not news_data["articles"]:
+        say(f"I couldn't find any news articles about {keyword} at the moment.")
+        return f"Sorry, I couldn't find any news articles for {keyword}."
+    articles = news_data["articles"]
     headlines = [article["title"] for article in articles[:5]]
-    return f"Top news for {keyword}: " + ". ".join(headlines)
+    news_summary = f"Here are the top 5 news headlines for {keyword}: " + ". ".join(headlines)
+    return news_summary
 
 def get_weather(city):
     api_key = "34ac881b51c347aa816172342240907"
     url = f"http://api.weatherapi.com/v1/current.json?key={api_key}&q={city}"
     response = requests.get(url)
     if response.status_code != 200:
-        return "I'm having trouble fetching the weather right now."
-
-    data = response.json()
-    current = data.get("current", {})
-    location = data.get("location", {}).get("name", city)
-    temp = current.get("temp_c", "unknown")
-    condition = current.get("condition", {}).get("text", "unknown")
-    return f"The weather in {location} is {temp}°C with {condition}."
+        say("I'm having trouble fetching the weather right now. Please try again later.")
+        return "Sorry, I couldn't fetch the weather."
+    weather_data = response.json()
+    if "current" not in weather_data:
+        say("I couldn't find the weather data at the moment.")
+        return "Sorry, I couldn't find the weather data."
+    location = weather_data["location"]["name"]
+    temp_c = weather_data["current"]["temp_c"]
+    condition = weather_data["current"]["condition"]["text"]
+    weather_summary = f"The current weather in {location} is {temp_c}°C with {condition}."
+    return weather_summary
 
 def greet_user():
     greetings = [
-        "Hello there! I'm Zenith. How can I assist you today?",
-        "Hi! I'm Zenith, your assistant. What can I do for you?",
-        "Greetings! Zenith at your service.",
-        "Hey! Need any help? Zenith is listening."
+        "Hello there! How can I assist you today?",
+        "Hi! What can I do for you?",
+        "Greetings! How may I help you?",
+        "Hey! Need any help?"
     ]
     say(random.choice(greetings))
 
 def respond_human_like(query):
     responses = {
         "how are you": [
-            "I'm just a bunch of code, but thanks for asking!",
+            "I'm just a bunch of code, but thanks for asking! How can I help you today?",
             "I'm functioning as expected. How about you?",
-            "Doing great! What's up?"
+            "Doing great! What's up?",
+            "I'm here and ready to assist you. How can I help?"
         ],
         "who are you": [
-            "I'm Zenith, your virtual assistant and companion.",
-            "They call me Zenith. I'm here to make your life easier.",
-            "I'm Zenith, your AI assistant. Ask me anything!"
-        ],
-        "what is your name": [
-            "My name is Zenith.",
-            "You can call me Zenith.",
-            "Zenith at your service!"
+            "I'm your friendly chatbot, here to help you with various tasks.",
+            "I'm a virtual assistant created to assist you. What can I do for you today?",
+            "I'm a chatbot, here to make your life easier. How can I assist?"
         ],
         "what can you do": [
-            "I can tell you the news, weather, time, open websites, and chat about random stuff too.",
-            "From current events to escaping John Wick—try me!",
-            "I can help with news, weather, websites, and fun stuff too!"
+            "I can provide you with news updates, weather forecasts, and even open websites for you.",
+            "I can help you with news, weather, and browsing the internet. Just let me know what you need.",
+            "I can fetch the latest news, tell you the weather, and open websites. What do you need?"
         ]
     }
+
     for key in responses:
         if key in query:
             say(random.choice(responses[key]))
             return True
     return False
 
-def clean_text(text):
-    # Remove any unwanted characters like asterisks or markdown symbols
-    text = re.sub(r'\*+', '', text)  # Remove asterisks
-    text = re.sub(r'[`~_<>]', '', text)  # Remove other special characters
-    return text
-
 if __name__ == "__main__":
-    print("Zenith is ready.")
+    print('Voice Assistant Started')
     greet_user()
 
     while True:
         query = takeCommand()
 
         if query != "Sorry, I could not understand that.":
-            if respond_human_like(query):
-                continue
+            if not respond_human_like(query):
+                say(f"You said: {query}")
 
             if "the time" in query:
-                time = datetime.datetime.now().strftime("%H:%M")
-                say(f"The time is {time}")
+                now = datetime.datetime.now()
+                current_time = now.strftime("%H:%M")
+                say(f"The time is {current_time}")
 
             elif "news" in query:
                 if "about" in query:
                     keyword = query.split("about")[-1].strip()
-                    say(f"Getting news about {keyword}")
+                    say(f"Fetching news about {keyword}, please wait.")
                     news = search_news(keyword)
                 else:
-                    say("Fetching top news")
+                    say("Fetching the latest news, please wait.")
                     news = get_news()
                 say(news)
 
             elif "current affairs" in query:
-                say("Fetching current affairs")
+                say("Fetching the latest current affairs, please wait.")
                 news = get_news()
                 say(news)
 
             elif "weather" in query:
-                if "in" in query:
-                    city = query.split("in")[-1].strip()
-                else:
-                    city = "your city"
-                say(f"Getting weather for {city}")
+                city = query.split("weather in")[-1].strip()
+                say(f"Fetching weather for {city}, please wait.")
                 weather = get_weather(city)
                 say(weather)
 
             elif "open" in query:
-                site = query.split("open")[-1].strip()
-                url = f"https://{site}" if not site.startswith("http") else site
-                say(f"Opening {site}")
+                website = query.split("open")[-1].strip()
+                url = f"http://{website}" if not website.startswith("http") else website
+                say(f"Opening {website}...")
                 webbrowser.open(url)
 
-            elif "exit" in query or "stop" in query:
-                say("Goodbye!")
+            elif any(kw in query for kw in ["generate", "tell me", "what is", "about", "write"]):
+                prompt = query
+                say("Generating content, please wait.")
+                generated_response = generate_content(prompt)
+                last_generated_response = generated_response
+                say(generated_response)
+
+            elif any(kw in query for kw in ["be more", "make it", "change it", "edit it", "modify it", "make this", "improve this", "make it more", "the previous", "previous content"]) and last_generated_response:
+                followup_instruction = query
+                full_prompt = f"{followup_instruction}\n\nHere is the original content:\n{last_generated_response}"
+                say("Modifying the previous response, please wait.")
+                generated_response = generate_content(full_prompt)
+                last_generated_response = generated_response
+                say(generated_response)
+
+            elif "stop" in query or "exit" in query:
+                say("Goodbye! Have a great day.")
+                last_generated_response = None
                 break
 
             else:
-                say("Let me think about that...")
-                response = generate_content(query)
-                cleaned_response = clean_text(response)  # Clean the response
-                say(cleaned_response)
+                say("I'm not sure I understand that command. Could you please repeat?")
 
         else:
-            say("I didn't quite catch that. Could you try again?")
+            say("I didn't quite catch that. Could you please repeat?")
