@@ -6,7 +6,7 @@ def generate_content(text):
     }
 
     params = {
-        'key': 'YOUR_API_KEY',
+        'key': 'YOUR_API_KEY',  # Replace with your actual API key
     }
 
     json_data = {
